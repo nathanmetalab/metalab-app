@@ -72,7 +72,7 @@ for r in range(10):
     c1, c2, c3, c4, c5, c6 = st.columns([3, 1.2, 0.8, 1.2, 0.8, 1.2])
     
     desc = c1.text_input(f"D{r}", key=f"desc_{r}", label_visibility="collapsed")
-    unit = c2.selectbox(f"U{r}", ["Heures", "Matière", "Prestation", "Déplacement", "Forfait"], key=f"unit_{r}", label_visibility="collapsed")
+    unit = c2.selectbox(f"U{r}", ["Heures", "Matière", "Prestation", "Déplacement", "Km", "Forfait"], key=f"unit_{r}", label_visibility="collapsed")
     qty = c3.number_input(f"Q{r}", min_value=0.0, step=1.0, key=f"qty_{r}", label_visibility="collapsed")
     price = c4.number_input(f"P{r}", min_value=0.0, step=0.01, key=f"price_{r}", label_visibility="collapsed")
     remise = c5.number_input(f"R{r}", min_value=0.0, max_value=100.0, step=1.0, key=f"rem_{r}", label_visibility="collapsed")
@@ -96,7 +96,7 @@ with res_col2:
     st.write(f"### TOTAL HT : {total_ht:.2f} €")
     st.success(f"## TOTAL TTC : {ttc:.2f} €")
 
-# --- FONCTION GÉNÉRATION PDF ---
+# --- FONCTION GÉNÉRATION PDF DÉTAILLÉE ---
 def generer_pdf(items, ht, ttc, c_nom, c_num, c_mail, type_doc, objet):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
@@ -116,7 +116,9 @@ def generer_pdf(items, ht, ttc, c_nom, c_num, c_mail, type_doc, objet):
 
     # Titre Document
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(400, 725, type_doc.upper())
+    c.setFillColor(HexColor("#2c3e50"))
+    c.drawRightString(550, 725, type_doc.upper())
+    c.setFillColor(colors.black)
 
     # Infos Client & Document
     c.rect(340, 640, 210, 60)
@@ -129,40 +131,56 @@ def generer_pdf(items, ht, ttc, c_nom, c_num, c_mail, type_doc, objet):
     c.drawString(40, 685, f"Date : {date_str}")
     c.drawString(40, 670, f"Validité : 30 jours")
 
-    # --- AFFICHAGE DE L'OBJET (INTITULÉ) ---
+    # --- OBJET ---
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, 630, "PRESTATION :")
     c.setFont("Helvetica", 11)
     c.drawString(130, 630, objet)
     c.line(40, 625, 550, 625)
 
-    # Tableau
+    # --- TABLEAU DÉTAILLÉ ---
     y = 600
     c.setFillColor(HexColor("#2c3e50")) 
     c.rect(40, y-5, 510, 20, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 9)
+    
+    # Entêtes colonnes PDF
     c.drawString(45, y, "Description")
-    c.drawString(495, y, "Total HT")
+    c.drawString(280, y, "Unité")
+    c.drawString(340, y, "Qté")
+    c.drawString(380, y, "P.U. HT")
+    c.drawString(440, y, "Rem.%")
+    c.drawRightString(545, y, "Total HT")
 
     y -= 25
     c.setFillColor(colors.black)
     c.setFont("Helvetica", 9)
+    
     for item in items:
         if y < 100:
             c.showPage()
             y = 800
-        c.drawString(45, y, item['desc'][:60])
-        c.drawString(495, y, item['total'])
+            c.setFont("Helvetica", 9)
+
+        c.drawString(45, y, item['desc'][:45])
+        c.drawString(280, y, str(item['unit']))
+        c.drawString(340, y, str(item['qty']))
+        c.drawString(380, y, f"{item['price']:.2f}€")
+        c.drawString(440, y, f"{item['remise']}%")
+        c.drawRightString(545, y, item['total'])
         y -= 20
 
     # Totaux
     y -= 30
     c.line(350, y+10, 550, y+10)
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(350, y, f"TOTAL HT : {ht:.2f} €")
+    c.drawString(350, y, f"TOTAL HT :")
+    c.drawRightString(545, y, f"{ht:.2f} €")
+    
     c.setFillColor(HexColor("#27ae60"))
-    c.drawString(350, y-20, f"TOTAL TTC (TVA 20%) : {ttc:.2f} €")
+    c.drawString(350, y-20, f"TOTAL TTC :")
+    c.drawRightString(545, y-20, f"{ttc:.2f} €")
 
     # Mentions légales
     if type_doc == "Facture":
