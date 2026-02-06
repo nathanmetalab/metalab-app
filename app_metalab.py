@@ -49,7 +49,9 @@ with col_client:
     st.subheader("👤 COORDONNÉES CLIENT")
     client_nom = st.text_input("Nom du Client", placeholder="Nom ou Entreprise")
     client_mail = st.text_input("Email Client", placeholder="client@exemple.com")
-    client_num = st.text_input("N° Client / Projet", placeholder="ex: CL-2024-01")
+    # --- MODIFICATION ICI : DEUX LIGNES AU LIEU D'UNE ---
+    client_tel = st.text_input("Téléphone Client", placeholder="06 00 00 00 00")
+    client_num = st.text_input("N° Projet / Dossier", placeholder="ex: PRJ-2026-01")
 
 # --- AJOUT DE LA LIGNE INTITULÉ PRESTATION ---
 st.write("---")
@@ -96,8 +98,8 @@ with res_col2:
     st.write(f"### TOTAL HT : {total_ht:.2f} €")
     st.success(f"## TOTAL TTC : {ttc:.2f} €")
 
-# --- FONCTION GÉNÉRATION PDF DÉTAILLÉE ---
-def generer_pdf(items, ht, ttc, c_nom, c_num, c_mail, type_doc, objet):
+# --- FONCTION GÉNÉRATION PDF ---
+def generer_pdf(items, ht, ttc, c_nom, c_num, c_mail, c_tel, type_doc, objet):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     date_str = datetime.now().strftime("%d/%m/%Y")
@@ -120,32 +122,32 @@ def generer_pdf(items, ht, ttc, c_nom, c_num, c_mail, type_doc, objet):
     c.drawRightString(550, 725, type_doc.upper())
     c.setFillColor(colors.black)
 
-    # Infos Client & Document
-    c.rect(340, 640, 210, 60)
+    # Infos Client (Cadre ajusté pour 4 lignes d'infos)
+    c.rect(340, 630, 210, 70)
     c.setFont("Helvetica-Bold", 10)
     c.drawString(350, 685, f"CLIENT : {c_nom.upper()}")
     c.setFont("Helvetica", 9)
-    c.drawString(350, 670, f"Email : {c_mail}")
-    c.drawString(350, 655, f"Réf : {c_num}")
+    c.drawString(350, 672, f"Email : {c_mail}")
+    c.drawString(350, 659, f"Tel : {c_tel}")
+    c.drawString(350, 646, f"Projet : {c_num}")
     
     c.drawString(40, 685, f"Date : {date_str}")
-    c.drawString(40, 670, f"Validité : 30 jours")
+    c.drawString(40, 672, f"Validité : 30 jours")
 
     # --- OBJET ---
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(40, 630, "PRESTATION :")
+    c.drawString(40, 615, "PRESTATION :")
     c.setFont("Helvetica", 11)
-    c.drawString(130, 630, objet)
-    c.line(40, 625, 550, 625)
+    c.drawString(130, 615, objet)
+    c.line(40, 610, 550, 610)
 
-    # --- TABLEAU DÉTAILLÉ ---
-    y = 600
+    # --- TABLEAU ---
+    y = 585
     c.setFillColor(HexColor("#2c3e50")) 
     c.rect(40, y-5, 510, 20, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 9)
     
-    # Entêtes colonnes PDF
     c.drawString(45, y, "Description")
     c.drawString(280, y, "Unité")
     c.drawString(340, y, "Qté")
@@ -182,7 +184,6 @@ def generer_pdf(items, ht, ttc, c_nom, c_num, c_mail, type_doc, objet):
     c.drawString(350, y-20, f"TOTAL TTC :")
     c.drawRightString(545, y-20, f"{ttc:.2f} €")
 
-    # Mentions légales
     if type_doc == "Facture":
         c.setFillColor(colors.black)
         c.setFont("Helvetica-Oblique", 7)
@@ -200,12 +201,12 @@ if btn_col1.button("📄 GÉNÉRER DEVIS"):
     if not client_nom:
         st.error("Nom du client obligatoire")
     else:
-        pdf = generer_pdf(rows_data, total_ht, ttc, client_nom, client_num, client_mail, "Devis", intitule_prestation)
+        pdf = generer_pdf(rows_data, total_ht, ttc, client_nom, client_num, client_mail, client_tel, "Devis", intitule_prestation)
         st.download_button("⬇️ TÉLÉCHARGER LE DEVIS", pdf, f"Devis_{client_nom}.pdf", "application/pdf")
 
 if btn_col2.button("💰 GÉNÉRER FACTURE"):
     if not client_nom:
         st.error("Nom du client obligatoire")
     else:
-        pdf = generer_pdf(rows_data, total_ht, ttc, client_nom, client_num, client_mail, "Facture", intitule_prestation)
+        pdf = generer_pdf(rows_data, total_ht, ttc, client_nom, client_num, client_mail, client_tel, "Facture", intitule_prestation)
         st.download_button("⬇️ TÉLÉCHARGER LA FACTURE", pdf, f"Facture_{client_nom}.pdf", "application/pdf")
